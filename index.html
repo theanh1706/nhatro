@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NHÀ TRỌ SÁNG HẠNH</title>
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:system-ui;padding:10px}
@@ -94,7 +95,7 @@ function initMonth(prevMonth){
           name: old.name||"",
           price: old.price||0,
           deposit: old.deposit||0,
-          e_old: old.next_e || old.e_old || 0, // điện cũ tháng mới = điện mới tháng trước
+          e_old: old.next_e || old.e_old || 0,
           next_e: 0,
           paid: 0,
           oldDebt: 0,
@@ -242,6 +243,12 @@ function bill(i){
 }
 
 render();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("service-worker.js",{scope:"/nhatro/"});
+}
 </script>
 
 </body>
