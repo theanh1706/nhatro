@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<!-- PWA -->
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NHÀ TRỌ SÁNG HẠNH</title>
@@ -11,7 +16,7 @@ body{margin:0;background:#0f172a;color:#fff;font-family:system-ui;padding:10px}
 .container{max-width:520px;margin:auto}
 h2{text-align:center}
 
-/* THÊM THANH CHỌN THÁNG */
+/* THÁNG */
 .monthBar{display:flex;gap:10px;margin-bottom:10px}
 .monthBar select,.monthBar input{
   flex:1;padding:10px;border-radius:10px;border:none
@@ -41,7 +46,6 @@ button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;col
 
 <h2>🏠 NHÀ TRỌ SÁNG HẠNH</h2>
 
-<!-- CHỌN THÁNG -->
 <div class="monthBar">
   <select id="monthSelect"></select>
   <input type="number" id="yearInput" placeholder="Năm">
@@ -55,7 +59,6 @@ button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;col
 <div id="list"></div>
 
 <script>
-/* ===== THÁNG + NĂM ===== */
 let month = localStorage.getItem("month") || new Date().getMonth()+1;
 let year = localStorage.getItem("year") || new Date().getFullYear();
 let m = month + "-" + year;
@@ -70,11 +73,9 @@ let roomDepositDefault = JSON.parse(localStorage.getItem("roomDepositDefault")||
 const TOTAL=8;
 let openRoom=null;
 
-/* FORMAT */
 function format(v){return v? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,"."):""}
 function parse(v){return +v.replace(/\./g,"")||0}
 
-/* TẠO OPTION THÁNG */
 let mSelect=document.getElementById("monthSelect");
 for(let i=1;i<=12;i++){
   let opt=document.createElement("option");
@@ -85,7 +86,6 @@ for(let i=1;i<=12;i++){
 mSelect.value=month;
 document.getElementById("yearInput").value=year;
 
-/* ĐỔI THÁNG */
 function changeMonth(){
   let mVal=document.getElementById("monthSelect").value;
   let yVal=document.getElementById("yearInput").value;
@@ -98,7 +98,6 @@ function changeMonth(){
 mSelect.onchange=changeMonth;
 document.getElementById("yearInput").onchange=changeMonth;
 
-/* RESET THÁNG */
 if(lastMonth!=m){
   if(data[lastMonth]){
     data[m]={};
@@ -112,7 +111,6 @@ if(lastMonth!=m){
   localStorage.setItem("lastMonth",m);
 }
 
-/* SAVE */
 function save(){
   localStorage.setItem("tro",JSON.stringify(data));
   localStorage.setItem("lastMonth",m);
@@ -121,7 +119,6 @@ function save(){
   localStorage.setItem("roomDepositDefault",JSON.stringify(roomDepositDefault));
 }
 
-/* GET ROOM */
 function getRoom(i){
   if(!data[m]) data[m]={};
   let r=data[m][i]||{};
@@ -138,7 +135,6 @@ function toggleRoom(i){
   render();
 }
 
-/* RENDER */
 function render(){
   let html="", totalMoney=0, unpaid=0;
 
@@ -196,14 +192,12 @@ function render(){
   document.getElementById("unpaidBox").innerText=unpaid;
 }
 
-/* SAVE DEFAULT */
 function setName(i,v){
   roomNameDefault[i]=v;
   data[m][i]={...getRoom(i),name:v};
   save();
 }
 
-/* TÍNH TIỀN */
 function calc(i){
   let r=getRoom(i);
 
@@ -245,7 +239,6 @@ function del(i){
   save(); render();
 }
 
-/* HÓA ĐƠN */
 function bill(i){
   let r=getRoom(i);
   if(!r.total){ alert("Chưa tính tiền!"); return; }
@@ -279,10 +272,17 @@ function bill(i){
 
 render();
 </script>
+
+<!-- SERVICE WORKER -->
 <script>
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("service-worker.js");
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("SW OK"))
+      .catch(err => console.log("SW lỗi:", err));
+  });
 }
 </script>
+
 </body>
 </html>
