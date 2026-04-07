@@ -5,28 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NHÀ TRỌ SÁNG HẠNH</title>
 <meta name="theme-color" content="#0f172a">
-
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:system-ui;padding:10px}
 h2{text-align:center}
-
 .monthBar{display:flex;gap:10px;margin-bottom:10px}
 .monthBar select,.monthBar input{flex:1;padding:10px;border-radius:10px;border:none}
-
 .top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .box{background:#1e293b;border-radius:14px;padding:14px;text-align:center}
-
 .room{background:#1e293b;border-radius:16px;margin-bottom:12px}
 .header{display:flex;justify-content:space-between;padding:14px;cursor:pointer}
 .header.done{background:rgba(34,197,94,0.2)}
 .header.unpaid{background:rgba(245,158,11,0.2)}
-
 .content{max-height:0;overflow:hidden;transition:0.3s;background:#334155}
 .room.open .content{max-height:1200px;padding:14px}
-
 .row{display:flex;gap:6px}
 input{width:100%;padding:12px;border-radius:10px;border:none;margin-top:5px}
-
 button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;color:#fff}
 .calc{background:#16a34a}
 .paid{background:#2563eb}
@@ -34,7 +27,6 @@ button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;col
 .print{background:#9333ea}
 .clear{background:#dc2626}
 .new{background:#f59e0b}
-
 .debt{margin-top:8px;font-weight:bold;color:#f87171}
 </style>
 </head>
@@ -68,9 +60,7 @@ let month = localStorage.getItem("month") || new Date().getMonth()+1;
 let year = localStorage.getItem("year") || new Date().getFullYear();
 let m = month + "-" + year;
 
-let lastMonth = localStorage.getItem("lastMonth");
 let data = JSON.parse(localStorage.getItem("tro")||"{}");
-
 const TOTAL=8;
 let openRoom=null;
 
@@ -93,104 +83,79 @@ function changeMonth(){
 mSelect.onchange=changeMonth;
 yearInput.onchange=changeMonth;
 
-/* RESET THÁNG */
-if(lastMonth!=m){
-  if(!data[m]) data[m]={};
-
-  if(data[lastMonth]){
-    for(let i=1;i<=TOTAL;i++){
-      let old=data[lastMonth][i];
-      if(old){
-        data[m][i]={
-          name: old.name || "",
-          price: old.price || 0,
-          deposit: old.deposit || 0,
-          e_old: old.next_e || 0,
-          next_e: old.next_e || 0,
-          paid: old.paid || 0,
-          oldDebt: old.oldDebt || 0,
-          total: old.total || 0
-        };
+/* INIT MONTH DATA */
+if(!data[m]) data[m]={};
+function initMonth(prevMonth){
+  for(let i=1;i<=TOTAL;i++){
+    let old = prevMonth && data[prevMonth] ? data[prevMonth][i] : null;
+    if(old){
+      if(!data[m][i]){
+        data[m][i] = {
+          name: old.name||"",
+          price: old.price||0,
+          deposit: old.deposit||0,
+          e_old: old.next_e || old.e_old || 0, // điện cũ tháng mới = điện mới tháng trước
+          next_e: 0,
+          paid: 0,
+          oldDebt: 0,
+          total:0
+        }
       }
     }
   }
-
-  localStorage.setItem("lastMonth",m);
-  localStorage.setItem("tro",JSON.stringify(data));
 }
+let prevMonth = (month==1 ? 12 : month-1) + "-" + (month==1 ? year-1 : year);
+initMonth(prevMonth);
+localStorage.setItem("tro",JSON.stringify(data));
 
 /* SAVE */
-function save(){
-  localStorage.setItem("tro",JSON.stringify(data));
-  localStorage.setItem("lastMonth",m);
-}
+function save(){ localStorage.setItem("tro",JSON.stringify(data)); }
 
 /* GET */
-function getRoom(i){
-  if(!data[m]) data[m]={};
-  return data[m][i] || {};
-}
+function getRoom(i){ if(!data[m]) data[m]={}; return data[m][i]||{} }
 
 /* TOGGLE */
-function toggleRoom(i){
-  openRoom=openRoom==i?null:i;
-  render();
-}
+function toggleRoom(i){ openRoom=openRoom==i?null:i; render(); }
 
 /* CALC */
 function autoCalc(i){
   let r=getRoom(i);
-
   let price=parse(document.getElementById("price"+i).value);
   let deposit=parse(document.getElementById("deposit"+i).value);
   let e_old=parse(document.getElementById("eo"+i).value);
   let e_new=parse(document.getElementById("en"+i).value);
-
-  if(!price || e_new < e_old) return;
-
+  if(!price || e_new<e_old) return;
   let total=price+(e_new-e_old)*3000+100000;
-
   data[m][i]={...r,price,deposit,e_old,next_e:e_new,total};
-
   save();
 }
 
-/* KHÁCH MỚI (KHÔNG XÓA SỐ ĐIỆN) */
+/* KHÁCH MỚI */
 function newCustomer(i){
   if(!confirm("Khách mới? Xóa toàn bộ dữ liệu phòng này trừ số điện?")) return;
-
-  let r = getRoom(i);
+  let r=getRoom(i);
   data[m][i]={
     name:"",
     price:0,
     deposit:0,
     e_old: r.e_old || 0,
-    next_e: r.next_e || 0,
+    next_e: 0,
     paid:0,
     oldDebt:0,
     total:0
   };
-
-  save();
-  render();
+  save(); render();
 }
 
 /* RENDER */
 function render(){
   let html="", totalMoney=0, unpaid=0;
-
   for(let i=1;i<=TOTAL;i++){
     let r=getRoom(i);
-
-    let total=r.total||0;
-    let paid=r.paid||0;
-    let oldDebt=r.oldDebt||0;
-
+    let total=r.total||0, paid=r.paid||0, oldDebt=r.oldDebt||0;
     let final=total+oldDebt-paid;
-
     if(total) totalMoney+=total;
     if(final>0) unpaid++;
-
     let status= final<=0 && total ? "done":"unpaid";
 
     html+=`
@@ -199,110 +164,67 @@ function render(){
         <div>Phòng ${i} - ${r.name||""}</div>
         <div>${total?format(total)+"đ":"--"}</div>
       </div>
-
       <div class="content">
-
       <div class="row">
-        <input value="${r.name||""}" placeholder="Tên"
-        onchange="setName(${i},this.value)">
-
+        <input value="${r.name||""}" placeholder="Tên" onchange="setName(${i},this.value)">
         <input id="price${i}" value="${format(r.price)}" placeholder="Tiền phòng"
-        oninput="onlyNumber(this)"
-        onblur="formatBlur(this);autoCalc(${i})"
-        inputmode="numeric" type="tel">
-
+        oninput="onlyNumber(this)" onblur="formatBlur(this);autoCalc(${i})" inputmode="numeric" type="tel">
         <input id="deposit${i}" value="${format(r.deposit)}" placeholder="Cọc"
-        oninput="onlyNumber(this)"
-        onblur="formatBlur(this);autoCalc(${i})"
-        inputmode="numeric" type="tel">
+        oninput="onlyNumber(this)" onblur="formatBlur(this);autoCalc(${i})" inputmode="numeric" type="tel">
       </div>
-
       <div class="row">
         <input id="eo${i}" value="${format(r.e_old)}" placeholder="Điện cũ"
-        oninput="onlyNumber(this)"
-        onblur="formatBlur(this);autoCalc(${i})"
-        inputmode="numeric" type="tel">
-
+        oninput="onlyNumber(this)" onblur="formatBlur(this);autoCalc(${i})" inputmode="numeric" type="tel">
         <input id="en${i}" value="${format(r.next_e)}" placeholder="Điện mới"
-        oninput="onlyNumber(this)"
-        onblur="formatBlur(this);autoCalc(${i})"
-        inputmode="numeric" type="tel">
+        oninput="onlyNumber(this)" onblur="formatBlur(this);autoCalc(${i})" inputmode="numeric" type="tel">
       </div>
-
       <input id="paid${i}" value="${format(paid)}" placeholder="Đã trả"
-      oninput="onlyNumber(this)"
-      onblur="formatBlur(this)"
-      inputmode="numeric" type="tel">
-
+      oninput="onlyNumber(this)" onblur="formatBlur(this)" inputmode="numeric" type="tel">
       <input id="oldDebt${i}" value="${format(oldDebt)}" placeholder="Nợ cũ"
-      oninput="onlyNumber(this)"
-      onblur="formatBlur(this)"
-      inputmode="numeric" type="tel">
-
+      oninput="onlyNumber(this)" onblur="formatBlur(this)" inputmode="numeric" type="tel">
       <div class="debt">Còn nợ: ${final>0?format(final)+"đ":"0đ"}</div>
-
       <button class="calc" onclick="autoCalc(${i});render();">TÍNH</button>
       <button class="paid" onclick="savePaid(${i})">LƯU</button>
       <button class="fullpaid" onclick="payFull(${i})">FULL</button>
       <button class="print" onclick="bill(${i})">IN</button>
       <button class="new" onclick="newCustomer(${i})">KHÁCH MỚI</button>
       <button class="clear" onclick="del(${i})">XÓA</button>
-
       </div>
     </div>`;
   }
-
   list.innerHTML=html;
   sumBox.innerText=format(totalMoney)+"đ";
   unpaidBox.innerText=unpaid;
 }
 
 /* NAME */
-function setName(i,v){
-  let r=getRoom(i);
-  data[m][i]={...r,name:v};
-  save();
-}
+function setName(i,v){ let r=getRoom(i); data[m][i]={...r,name:v}; save(); }
 
 /* SAVE PAID */
 function savePaid(i){
   let r=getRoom(i);
   let paid=parse(document.getElementById("paid"+i).value);
   let oldDebt=parse(document.getElementById("oldDebt"+i).value);
-
-  data[m][i]={...r,paid,oldDebt};
-  save(); render();
+  data[m][i]={...r,paid,oldDebt}; save(); render();
 }
 
 /* FULL */
-function payFull(i){
-  let r=getRoom(i);
-  if(!r.total) return;
-  data[m][i]={...r,paid:r.total,oldDebt:0};
-  save(); render();
-}
+function payFull(i){ let r=getRoom(i); if(!r.total) return; data[m][i]={...r,paid:r.total,oldDebt:0}; save(); render(); }
 
 /* DELETE */
-function del(i){
-  if(!confirm("Xóa phòng này?")) return;
-  if(data[m]) delete data[m][i];
-  save(); render();
-}
+function del(i){ if(!confirm("Xóa phòng này?")) return; if(data[m]) delete data[m][i]; save(); render(); }
 
-/* BILL – LIỆT KÊ CHI TIẾT */
+/* BILL */
 function bill(i){
   let r=getRoom(i);
   if(!r.total){ alert("Chưa tính tiền!"); return; }
-
   let e_old=r.e_old||0, e_new=r.next_e||0;
   let e_money=(e_new-e_old)*3000;
-
-  let totalRoom = r.price||0;
-  let deposit = r.deposit||0;
-  let oldDebt = r.oldDebt||0;
-  let paid = r.paid||0;
+  let totalRoom=r.price||0;
+  let deposit=r.deposit||0;
+  let oldDebt=r.oldDebt||0;
+  let paid=r.paid||0;
   let total = totalRoom + e_money + 100000 + oldDebt - paid;
-
   let html=`<html><body style="font-family:Arial;padding:20px">
   <h2 style="text-align:center">HÓA ĐƠN PHÒNG ${i}</h2>
   <hr>
@@ -316,13 +238,11 @@ function bill(i){
   <hr>
   <h2>TỔNG: ${format(total)}đ</h2>
   </body></html>`;
-
-  let w=window.open("");
-  w.document.write(html);
-  w.print();
+  let w=window.open(""); w.document.write(html); w.print();
 }
 
 render();
 </script>
+
 </body>
 </html>
