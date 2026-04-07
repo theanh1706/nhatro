@@ -10,30 +10,32 @@
 
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:system-ui;padding:10px}
-.container{max-width:520px;margin:auto}
 h2{text-align:center}
 
 .monthBar{display:flex;gap:10px;margin-bottom:10px}
-.monthBar select,.monthBar input{
-  flex:1;padding:10px;border-radius:10px;border:none
-}
+.monthBar select,.monthBar input{flex:1;padding:10px;border-radius:10px;border:none}
 
 .top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .box{background:#1e293b;border-radius:14px;padding:14px;text-align:center}
+
 .room{background:#1e293b;border-radius:16px;margin-bottom:12px}
 .header{display:flex;justify-content:space-between;padding:14px;cursor:pointer}
 .header.done{background:rgba(34,197,94,0.2)}
 .header.unpaid{background:rgba(245,158,11,0.2)}
+
 .content{max-height:0;overflow:hidden;transition:0.3s;background:#334155}
 .room.open .content{max-height:1200px;padding:14px}
+
 .row{display:flex;gap:6px}
 input{width:100%;padding:12px;border-radius:10px;border:none;margin-top:5px}
+
 button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;color:#fff}
 .calc{background:#16a34a}
 .paid{background:#2563eb}
 .fullpaid{background:#22c55e}
 .print{background:#9333ea}
 .clear{background:#dc2626}
+
 .debt{margin-top:8px;font-weight:bold;color:#f87171}
 </style>
 </head>
@@ -56,18 +58,20 @@ button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;col
 
 <script>
 
-/* ===== FORMAT ===== */
+/* FORMAT */
 function format(v){return v? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,"."):""}
 function parse(v){return +v.toString().replace(/\D/g,"")||0}
 
-/* ===== CHỈ NHẬP SỐ + AUTO CALC ===== */
-function onlyNumber(el,i){
-  let val = el.value.replace(/[^0-9]/g,"");
-  el.value = format(val);
-  autoCalc(i);
+/* INPUT */
+function onlyNumber(el){
+  el.value = el.value.replace(/[^0-9]/g,"");
 }
 
-/* ===== THÁNG ===== */
+function formatBlur(el){
+  el.value = format(parse(el.value));
+}
+
+/* TIME */
 let month = localStorage.getItem("month") || new Date().getMonth()+1;
 let year = localStorage.getItem("year") || new Date().getFullYear();
 let m = month + "-" + year;
@@ -82,7 +86,7 @@ let roomDepositDefault = JSON.parse(localStorage.getItem("roomDepositDefault")||
 const TOTAL=8;
 let openRoom=null;
 
-/* ===== SELECT ===== */
+/* SELECT */
 let mSelect=document.getElementById("monthSelect");
 for(let i=1;i<=12;i++){
   let opt=document.createElement("option");
@@ -91,7 +95,7 @@ for(let i=1;i<=12;i++){
   mSelect.appendChild(opt);
 }
 mSelect.value=month;
-document.getElementById("yearInput").value=year;
+yearInput.value=year;
 
 function changeMonth(){
   localStorage.setItem("month",mSelect.value);
@@ -101,7 +105,7 @@ function changeMonth(){
 mSelect.onchange=changeMonth;
 yearInput.onchange=changeMonth;
 
-/* ===== RESET ===== */
+/* RESET */
 if(lastMonth!=m){
   if(data[lastMonth]){
     data[m]={};
@@ -115,7 +119,7 @@ if(lastMonth!=m){
   localStorage.setItem("lastMonth",m);
 }
 
-/* ===== SAVE ===== */
+/* SAVE */
 function save(){
   localStorage.setItem("tro",JSON.stringify(data));
   localStorage.setItem("lastMonth",m);
@@ -124,7 +128,7 @@ function save(){
   localStorage.setItem("roomDepositDefault",JSON.stringify(roomDepositDefault));
 }
 
-/* ===== GET ROOM ===== */
+/* GET */
 function getRoom(i){
   if(!data[m]) data[m]={};
   let r=data[m][i]||{};
@@ -139,32 +143,26 @@ function toggleRoom(i){
   render();
 }
 
-/* ===== AUTO CALC ===== */
+/* CALC */
 function autoCalc(i){
   let price=parse(document.getElementById("price"+i).value);
   let e_old=parse(document.getElementById("eo"+i).value);
   let e_new=parse(document.getElementById("en"+i).value);
+  let deposit=parse(document.getElementById("deposit"+i).value);
 
   if(!price || e_new < e_old) return;
 
-  let deposit=parse(document.getElementById("deposit"+i).value);
-
   let total=price+(e_new-e_old)*3000+100000;
 
-  data[m][i]={
-    ...getRoom(i),
-    price,
-    deposit,
-    e_old,
-    next_e:e_new,
-    total
-  };
+  data[m][i]={...getRoom(i),price,deposit,e_old,next_e:e_new,total};
+
+  roomDefault[i]=price;
+  roomDepositDefault[i]=deposit;
 
   save();
-  render();
 }
 
-/* ===== RENDER ===== */
+/* RENDER */
 function render(){
   let html="", totalMoney=0, unpaid=0;
 
@@ -192,22 +190,45 @@ function render(){
       <div class="content">
 
       <div class="row">
-        <input value="${r.name||""}" placeholder="Tên" onchange="setName(${i},this.value)">
-        <input id="price${i}" value="${format(r.price)}" placeholder="Tiền phòng" oninput="onlyNumber(this,${i})">
-        <input id="deposit${i}" value="${format(r.deposit)}" placeholder="Cọc" oninput="onlyNumber(this,${i})">
+        <input value="${r.name||""}" placeholder="Tên"
+        onchange="setName(${i},this.value)">
+
+        <input id="price${i}" value="${format(r.price)}" placeholder="Tiền phòng"
+        oninput="onlyNumber(this)"
+        onblur="formatBlur(this);autoCalc(${i})"
+        inputmode="numeric" type="tel">
+
+        <input id="deposit${i}" value="${format(r.deposit)}" placeholder="Cọc"
+        oninput="onlyNumber(this)"
+        onblur="formatBlur(this);autoCalc(${i})"
+        inputmode="numeric" type="tel">
       </div>
 
       <div class="row">
-        <input id="eo${i}" value="${format(r.e_old)}" placeholder="Điện cũ" oninput="onlyNumber(this,${i})">
-        <input id="en${i}" value="${format(r.next_e)}" placeholder="Điện mới" oninput="onlyNumber(this,${i})">
+        <input id="eo${i}" value="${format(r.e_old)}" placeholder="Điện cũ"
+        oninput="onlyNumber(this)"
+        onblur="formatBlur(this);autoCalc(${i})"
+        inputmode="numeric" type="tel">
+
+        <input id="en${i}" value="${format(r.next_e)}" placeholder="Điện mới"
+        oninput="onlyNumber(this)"
+        onblur="formatBlur(this);autoCalc(${i})"
+        inputmode="numeric" type="tel">
       </div>
 
-      <input id="paid${i}" value="${format(paid)}" placeholder="Đã trả" oninput="onlyNumber(this,${i})">
-      <input id="oldDebt${i}" value="${format(oldDebt)}" placeholder="Nợ cũ" oninput="onlyNumber(this,${i})">
+      <input id="paid${i}" value="${format(paid)}" placeholder="Đã trả"
+      oninput="onlyNumber(this)"
+      onblur="formatBlur(this)"
+      inputmode="numeric" type="tel">
+
+      <input id="oldDebt${i}" value="${format(oldDebt)}" placeholder="Nợ cũ"
+      oninput="onlyNumber(this)"
+      onblur="formatBlur(this)"
+      inputmode="numeric" type="tel">
 
       <div class="debt">Còn nợ: ${final>0?format(final)+"đ":"0đ"}</div>
 
-      <button class="calc" onclick="autoCalc(${i})">TÍNH</button>
+      <button class="calc" onclick="autoCalc(${i});render();">TÍNH</button>
       <button class="paid" onclick="savePaid(${i})">LƯU</button>
       <button class="fullpaid" onclick="payFull(${i})">FULL</button>
       <button class="print" onclick="bill(${i})">IN</button>
@@ -222,12 +243,14 @@ function render(){
   unpaidBox.innerText=unpaid;
 }
 
+/* NAME */
 function setName(i,v){
   roomNameDefault[i]=v;
   data[m][i]={...getRoom(i),name:v};
   save();
 }
 
+/* SAVE PAID */
 function savePaid(i){
   let r=getRoom(i);
   let paid=parse(document.getElementById("paid"+i).value);
@@ -237,6 +260,7 @@ function savePaid(i){
   save(); render();
 }
 
+/* FULL */
 function payFull(i){
   let r=getRoom(i);
   if(!r.total) return;
@@ -244,27 +268,35 @@ function payFull(i){
   save(); render();
 }
 
+/* DELETE */
 function del(i){
-  delete data[m][i];
-  save(); render();
+  if(!confirm("Xóa toàn bộ phòng này?")) return;
+
+  if(data[m]) delete data[m][i];
+
+  delete roomDefault[i];
+  delete roomNameDefault[i];
+  delete roomDepositDefault[i];
+
+  save();
+  render();
 }
 
-/* ===== BILL ===== */
+/* BILL */
 function bill(i){
   let r=getRoom(i);
   if(!r.total){ alert("Chưa tính tiền!"); return; }
 
-  let e_old = r.e_old || 0;
-  let e_new = r.next_e || 0;
-  let e_money = (e_new - e_old) * 3000;
+  let e_old=r.e_old||0, e_new=r.next_e||0;
+  let e_money=(e_new-e_old)*3000;
 
-  let roomPrice = r.price || 0;
-  let oldDebt = r.oldDebt || 0;
-  let paid = r.paid || 0;
+  let roomPrice=r.price||0;
+  let oldDebt=r.oldDebt||0;
+  let paid=r.paid||0;
 
-  let total = roomPrice + e_money + 100000 + oldDebt - paid;
+  let total=roomPrice+e_money+100000+oldDebt-paid;
 
-  let html = `<html><body style="font-family:Arial;padding:20px">
+  let html=`<html><body style="font-family:Arial;padding:20px">
   <h2 style="text-align:center">HÓA ĐƠN PHÒNG ${i}</h2>
   <hr>
   <p>Khách: <b>${r.name||""}</b></p>
@@ -277,7 +309,7 @@ function bill(i){
   <h2>TỔNG: ${format(total)}đ</h2>
   </body></html>`;
 
-  let w = window.open("");
+  let w=window.open("");
   w.document.write(html);
   w.print();
 }
