@@ -1,7 +1,7 @@
 {
-  "name": "QL Trọ PRO MAX",
-  "short_name": "QL Trọ",
-  "start_url": "./index.html",
+  "name": "Nhà Trọ Sáng Hạnh",
+  "short_name": "Nhà Trọ",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
