@@ -245,35 +245,70 @@ function payFull(i){ let r=getRoom(i); if(!r.total) return; data[m][i]={...r,pai
 /* DELETE */
 function del(i){ if(!confirm("Xóa phòng này?")) return; if(data[m]) delete data[m][i]; save(); render(); }
 
-/* BILL MODAL */
+/* BILL MODAL HIỆN ĐẸP, NÚT ĐÓNG DƯỚI */
 function bill(i){
-  let r=getRoom(i);
+  let r = getRoom(i);
   if(!r.total){ alert("Chưa tính tiền!"); return; }
-  let e_old=r.e_old||0, e_new=r.next_e||0;
-  let e_money=(e_new-e_old)*3000;
-  let totalRoom=r.price||0;
-  let deposit=r.deposit||0;
-  let oldDebt=r.oldDebt||0;
-  let paid=r.paid||0;
+
+  let e_old = r.e_old||0, e_new = r.next_e||0;
+  let e_money = (e_new - e_old) * 3000;
+  let totalRoom = r.price||0;
+  let deposit = r.deposit||0;
+  let oldDebt = r.oldDebt||0;
+  let paid = r.paid||0;
   let total = totalRoom + e_money + 100000 + oldDebt - paid;
 
   let html = `
-    <h2 style="text-align:center; font-size:24px; margin-bottom:10px;">HÓA ĐƠN PHÒNG ${i}</h2>
-    <div style="padding:10px; font-size:18px;">
-      <p>Khách: <b>${r.name||""}</b></p>
-      <p>Tiền phòng: ${format(totalRoom)}đ</p>
-      <p>Điện: (${format(e_old)} → ${format(e_new)}) = ${format(e_money)}đ</p>
-      <p>Nước: 100.000đ</p>
-      <p>Tiền cọc: ${format(deposit)}đ</p>
-      <p>Nợ cũ: ${format(oldDebt)}đ</p>
-      <p>Đã trả: ${format(paid)}đ</p>
-      <hr>
-      <h3 style="text-align:right; font-size:22px;">TỔNG: ${format(total)}đ</h3>
+    <div style="max-width:500px;margin:20px auto;background:#1e293b;padding:20px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.5);font-size:16px;">
+      <h2 style="text-align:center;color:#fbbf24;margin-bottom:20px;">🏠 HÓA ĐƠN PHÒNG ${i}</h2>
+
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Khách:</span><span><b>${r.name||""}</b></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Tiền phòng:</span><span>${format(totalRoom)}đ</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Điện (${format(e_old)} → ${format(e_new)}):</span><span>${format(e_money)}đ</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Nước:</span><span>100.000đ</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Tiền cọc:</span><span>${format(deposit)}đ</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Nợ cũ:</span><span>${format(oldDebt)}đ</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+        <span>Đã trả:</span><span>${format(paid)}đ</span>
+      </div>
+
+      <div style="margin-top:15px;padding-top:10px;border-top:2px solid #334155;text-align:right;font-size:20px;color:#22c55e;font-weight:bold;">
+        TỔNG: ${format(total)}đ
+      </div>
+
+      <button onclick="closeBillModal()" style="
+        width:100%;
+        margin-top:20px;
+        padding:12px;
+        border:none;
+        border-radius:12px;
+        background:#dc2626;
+        color:#fff;
+        font-size:18px;
+        font-weight:bold;
+        cursor:pointer;
+      ">ĐÓNG</button>
     </div>
   `;
 
   document.getElementById("billContent").innerHTML = html;
   document.getElementById("viewBillModal").style.display = "block";
+}
+
+function closeBillModal(){
+  document.getElementById("viewBillModal").style.display = "none";
 }
 function closeBillModal(){
   document.getElementById("viewBillModal").style.display = "none";
