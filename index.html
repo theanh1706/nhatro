@@ -226,7 +226,8 @@ function bill(i){
   let oldDebt=r.oldDebt||0;
   let paid=r.paid||0;
   let total = totalRoom + e_money + 100000 + oldDebt - paid;
-  let html=`<html><body style="font-family:Arial;padding:20px">
+  
+  let html = `
   <h2 style="text-align:center">HÓA ĐƠN PHÒNG ${i}</h2>
   <hr>
   <p>Khách: <b>${r.name||""}</b></p>
@@ -238,8 +239,17 @@ function bill(i){
   <p>Đã trả: ${format(paid)}đ</p>
   <hr>
   <h2>TỔNG: ${format(total)}đ</h2>
-  </body></html>`;
-  let w=window.open(""); w.document.write(html); w.print();
+  `;
+  
+  document.getElementById("printContent").innerHTML = html;
+  document.getElementById("printModal").style.display = "block";
+
+  // in ngay modal
+  setTimeout(()=>window.print(),100);
+}
+
+function closePrint(){
+  document.getElementById("printModal").style.display="none";
 }
 
 render();
@@ -250,6 +260,9 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("service-worker.js",{scope:"/nhatro/"});
 }
 </script>
-
+<div id="printModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:auto;z-index:9999;padding:20px;">
+  <button style="position:fixed;top:10px;right:10px;padding:10px;background:#dc2626;color:#fff;border:none;border-radius:8px;z-index:10000;" onclick="closePrint()">Đóng</button>
+  <div id="printContent"></div>
+</div>
 </body>
 </html>
