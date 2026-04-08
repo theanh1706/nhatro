@@ -21,7 +21,7 @@ h2{text-align:center}
 .room.open .content{max-height:1200px;padding:14px}
 .row{display:flex;gap:6px}
 input{width:100%;padding:12px;border-radius:10px;border:none;margin-top:5px}
-button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;color:#fff}
+button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;color:#fff;font-size:16px}
 .calc{background:#16a34a}
 .paid{background:#2563eb}
 .fullpaid{background:#22c55e}
@@ -46,6 +46,36 @@ button{width:100%;padding:12px;border:none;border-radius:10px;margin-top:8px;col
 </div>
 
 <div id="list"></div>
+
+<!-- Modal xem hóa đơn -->
+<div id="viewBillModal" style="
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#0f172a;
+  color:#fff;
+  overflow:auto;
+  z-index:9999;
+  padding:20px;
+  box-sizing:border-box;
+">
+  <button onclick="closeBillModal()" style="
+    position:fixed;
+    top:10px;
+    right:10px;
+    padding:10px 15px;
+    background:#dc2626;
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    z-index:10000;
+  ">Đóng</button>
+  <div id="billContent" style="font-size:18px; line-height:1.6;"></div>
+</div>
 
 <script>
 /* FORMAT */
@@ -187,7 +217,7 @@ function render(){
       <button class="calc" onclick="autoCalc(${i});render();">TÍNH</button>
       <button class="paid" onclick="savePaid(${i})">LƯU</button>
       <button class="fullpaid" onclick="payFull(${i})">FULL</button>
-      <button class="print" onclick="bill(${i})">IN</button>
+      <button class="print" onclick="bill(${i})">XEM HÓA ĐƠN</button>
       <button class="new" onclick="newCustomer(${i})">KHÁCH MỚI</button>
       <button class="clear" onclick="del(${i})">XÓA</button>
       </div>
@@ -215,7 +245,7 @@ function payFull(i){ let r=getRoom(i); if(!r.total) return; data[m][i]={...r,pai
 /* DELETE */
 function del(i){ if(!confirm("Xóa phòng này?")) return; if(data[m]) delete data[m][i]; save(); render(); }
 
-/* BILL */
+/* BILL MODAL */
 function bill(i){
   let r=getRoom(i);
   if(!r.total){ alert("Chưa tính tiền!"); return; }
@@ -226,30 +256,27 @@ function bill(i){
   let oldDebt=r.oldDebt||0;
   let paid=r.paid||0;
   let total = totalRoom + e_money + 100000 + oldDebt - paid;
-  
+
   let html = `
-  <h2 style="text-align:center">HÓA ĐƠN PHÒNG ${i}</h2>
-  <hr>
-  <p>Khách: <b>${r.name||""}</b></p>
-  <p>Tiền phòng: ${format(totalRoom)}đ</p>
-  <p>Điện: (${format(e_old)} → ${format(e_new)}) = ${format(e_money)}đ</p>
-  <p>Nước: 100.000đ</p>
-  <p>Tiền cọc: ${format(deposit)}đ</p>
-  <p>Nợ cũ: ${format(oldDebt)}đ</p>
-  <p>Đã trả: ${format(paid)}đ</p>
-  <hr>
-  <h2>TỔNG: ${format(total)}đ</h2>
+    <h2 style="text-align:center; font-size:24px; margin-bottom:10px;">HÓA ĐƠN PHÒNG ${i}</h2>
+    <div style="padding:10px; font-size:18px;">
+      <p>Khách: <b>${r.name||""}</b></p>
+      <p>Tiền phòng: ${format(totalRoom)}đ</p>
+      <p>Điện: (${format(e_old)} → ${format(e_new)}) = ${format(e_money)}đ</p>
+      <p>Nước: 100.000đ</p>
+      <p>Tiền cọc: ${format(deposit)}đ</p>
+      <p>Nợ cũ: ${format(oldDebt)}đ</p>
+      <p>Đã trả: ${format(paid)}đ</p>
+      <hr>
+      <h3 style="text-align:right; font-size:22px;">TỔNG: ${format(total)}đ</h3>
+    </div>
   `;
-  
-  document.getElementById("printContent").innerHTML = html;
-  document.getElementById("printModal").style.display = "block";
 
-  // in ngay modal
-  setTimeout(()=>window.print(),100);
+  document.getElementById("billContent").innerHTML = html;
+  document.getElementById("viewBillModal").style.display = "block";
 }
-
-function closePrint(){
-  document.getElementById("printModal").style.display="none";
+function closeBillModal(){
+  document.getElementById("viewBillModal").style.display = "none";
 }
 
 render();
@@ -260,9 +287,6 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("service-worker.js",{scope:"/nhatro/"});
 }
 </script>
-<div id="printModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;overflow:auto;z-index:9999;padding:20px;">
-  <button style="position:fixed;top:10px;right:10px;padding:10px;background:#dc2626;color:#fff;border:none;border-radius:8px;z-index:10000;" onclick="closePrint()">Đóng</button>
-  <div id="printContent"></div>
-</div>
+
 </body>
 </html>
